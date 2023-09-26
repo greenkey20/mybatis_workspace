@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="boardMapper">
+	<!--2022.2.10(목) 15h20 resultMap에서 자동으로 setter 호출해서(?) set해줌; resultMap 내부 컬럼명은 꼭 대문자로 써야 하는 것은 아님 + 소문자로 써도 됨-->
+	<resultMap id="boardResultSet" type="board">
+		<result column="BOARD_NO" property="boardNo" />
+		<result column="BOARD_TITLE" property="boardTitle" />
+		<result column="USER_ID" property="boardWriter" />
+		<result column="COUNT" property="count" />
+		<result column="CREATE_DATE" property="createDate" />
+		<!--2022.2.11(금) 11h20 게시글 상세 조회 시 필요한 컬럼/property 추가 -> 이 컬럼/property가 필요 없는 selectList의 조회 결과를 이 resultMap에 담을 때, 관련 쿼리문 SELECT절에 이 컬럼이 없는 경우, MyBatis가 알아서 이 property는 사용 안 하는 바, null pointer exception 등 문제 발생하지 않음-->
+		<result column="board_content" property="boardContent" />
+	</resultMap>
+	
+	<!--2022.2.11(금) 11h45 내가 작성해봄; REPLY 테이블 및 Reply vo 클래스의 대부분의 컬럼/필드들에 대한 property 만들어둠 -> 단, selectReplyList 조회 시, 댓글 작성자 정보는 'userId'라는 컬럼으로 받아왔기 때문에 수정-->
+	<resultMap id="replyResultSet2" type="reply">
+		<result column="reply_no" property="replyNo" />
+		<result column="reply_content" property="replyContent" />
+		<result column="ref_bno" property="refBoardNo" />
+		<result column="user_id" property="replyWriter" /> <!--처음에 내가 작성 시에는 column="reply_writer"로 만들었었음-->
+		<result column="create_date" property="createDate" />
+	</resultMap>
+	
+	<!--2022.2.11(금) 12h 강사님께서 작성하신 resultMap-->
+	<resultMap id="replyResultSet" type="com.kh.mybatis.board.model.vo.Reply">
+		<result column="reply_no" property="replyNo" />
+		<result column="user_id" property="replyWriter" />
+		<result column="reply_content" property="replyContent" />
+		<result column="create_date" property="createDate" />
+	</resultMap>
+
+	<!--2022.2.10(목) 14h40-->
+	<select id="selectListCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM BOARD
+		WHERE STATUS = 'Y'
+	</select>
+	
+	<!--2022.2.10(목) 15h20-->
+	<select id="selectList" resultMap="boardResultSet">
+		SELECT BOARD_NO, BOARD_TITLE, USER_ID, COUNT, CREATE_DATE
+		FROM BOARD B
+		LEFT JOIN MEMBER ON (BOARD_WRITER = USER_NO)
+		WHERE B.STATUS = 'Y'
+		ORDER BY BOARD_NO DESC
+	</select>
+	
+	<!--2022.2.11(금) 10h35 회사에 따라 sql문 소문자로 쓰기도 함 -> 나의 질문 = 쿼리문 대/소문자 작동 원리(?)-->
+	<!--int 자료형을 전달받으려고 하는데, mapper.xml 파일에 어떻게 기재해야 할까? -> MyBatis 공식 문서 = '공통의 Java 타입에 대해서는 내장된 타입 별칭이 있음 + 이 모두 대소문자를 가림'-->
+	<!--2022.2.11(금) 10h40 나의 질문 = Java에서 int vs Integer 차이가 뭐지? >.<-->
+	<update id="increaseCount" parameterType="_int">
+		update board
+		set count = count + 1
+		where status = 'Y' and board_no = #{boardNo} <!--'boardNo'= 내가 dao로부터 update() 메소드의 매개변수로 넘긴 변수의 이름-->
+	</update>
+	
+	<!--2022.2.11(금) 11h15-->
+	<select id="selectBoard" parameterType="_int" resultMap="boardResultSet">
+		select board_no, board_title, user_id, count, create_date, board_content
+		from board b
+		left join member on (board_writer = user_no)
+		where b.status = 'Y' and board_no = #{boardNo}
+	</select>
+	
+	<!--2022.2.11(금) 11h40-->
+	<select id="selectReplyList" parameterType="_int" resultMap="replyResultSet2">
+		select reply_no, reply_content, user_id, create_date
+		from reply r
+		left join member on (reply_writer = user_no)
+		where r.status = 'Y' and ref_bno = #{boardNo}
+		order by create_date desc
+	</select>
+	
+	<!--2022.2.11(금) 15h15 sql문 안에 core library 태그들(if, choose-when-otherwise 등) 사용 가능함-->
+	<!--나의 질문 = 강사님, 그런데 저희 위에 selectListCount의 resultType은 'int'로 적었었는디요? -> 강사님 답변 = 위에 _ 안 썼던 것은 강사님 실수 + 공식 문서에 int의 별칭은 '_int'로 되어있음; 그런데 MyBatis를 까볼 수는 없지만, 'int'로 써도 작동하긴 하는 듯함-->
+	<select id="selectSearchCount" parameterType="hashmap" resultType="_int">
+		select count(*)
+		from board b
+		join member on (board_writer = user_no)
+		where b.status = 'Y'
+		<if test="condition == 'writer'"> <!--여기서 condition = 인자로 전달해준 HashMap 'map'에  넣어준 key 값; equals로 비교는 안 됨-->
+			and user_id 
+		</if>
+		<if test="condition == 'title'">
+			and board_title
+		</if>
+		<if test="condition == 'content'">
+			and board_content
+		</if>
+		like '%'||#{keyword}||'%'
+	</select>
+	
+	<!--2022.2.11(금) 16h10-->
+	<select id="selectSearchList" parameterType="hashmap" resultMap="boardResultSet">
+		select board_no, board_title, user_id, count, create_date
+		from board b
+		left join member on (board_writer = user_no)
+		where b.status = 'Y'
+		<choose>
+			<when test="condition == 'writer'">
+				and user_id 
+			</when>
+			<when test="condition == 'title'">
+				and board_title
+			</when>
+			<otherwise>
+				and board_content
+			</otherwise>
+		</choose>
+		like '%' || #{keyword} || '%'
+		order by board_no desc
+	</select>
+
+	
+</mapper>

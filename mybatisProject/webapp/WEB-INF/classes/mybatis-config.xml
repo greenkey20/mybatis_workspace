@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!--2022.2.9(수) 11h
+	이 문서의 형식이 configuration(환경 설정)임을 알려줌 -> configuration 태그가 전체를 감싸고 있음
+	DTD = 유효성(태그들이 configuration 태그 안에 존재해도 되는지)을 체크해줌 -> 말도 안 되는 태그(e.g. a 태그 등) 쓰면 빨간줄 뜸
+	단, name 속성 값(대/소문자 구분함), 클래스 경로 오타 등은 DTD도 체크하지 못하므로, 내가 처음에 작성 시 신경써서, 차분하게, 오류 없게, 써야 함-->
+	
+<configuration>
+
+	<!--setting = MyBatis 구동 시 선언할 설정들을 작성하는 영역-->
+	<settings>
+		<!--만약에 null로 데이터가 전달되었다면, 빈칸이 아닌 NULL로 인식; NULL을 꼭/무조건 대문자로 작성해야 함-->
+		<setting name="jdbcTypeForNull" value="NULL" />
+	</settings>
+	
+	<!--typeAlias = vo/dto 클래스들의 full 클래스명을 단순한 클래스명으로 사용하기 위한 별칭을 등록할 수 있는 영역; 클래스 body 작성은 안 하더라도, 클래스 파일은 만들고 여기에 추가해서 별명 지어두어야 함 vs otherwise 서버 오류남-->
+	<typeAliases>
+		<!--2022.2.9(수) 16h25 추가-->
+		<typeAlias type="com.kh.mybatis.member.model.vo.Member" alias="member" />
+		<typeAlias type="com.kh.mybatis.board.model.vo.Board" alias="board" />
+		<typeAlias type="com.kh.mybatis.board.model.vo.Reply" alias="reply" />
+	</typeAliases>
+	
+	<!--environment = MyBatis에서 연동할 db(와의 접속)정보들을 등록하는 영역; 여러 개의 db 정보 등록 가능 -> default 속성으로 여러 개의 id 중 어떤 db를 기본 db로 사용할 것인지 설정해줘야 함-->
+	<environments default="development">
+		<environment id="development">
+			<!--transactionManager는 JDBC와 MANAGED 둘 중 하나를 선택할 수 있음
+				 - JDBC = 트랜잭션을 내가 직접 관리; 수동 commit
+				 - MANAGED = 개발자가 트랜잭션에 대해 어떠한 영향도 행사하지 않음; 자동 commit-->
+			<transactionManager type="JDBC" />
+			
+			<!--dataSource는 POOLED와 UNPOOLED 둘 중 하나를 선택할 수 있음 = ConnectionPool 사용 여부
+				ConnectionPool = Connection 객체를 담아둘 수 있는 영역 -> 1번 생성된 Connection 객체를 담아두면 재사용해서 쓸 수 있음 -> POOLED = 사용하겠다 vs UNPOOLED = 안 쓰겠다
+				2022.3.11(금) 11h25? jdbc 사용 시 connection pool 사용의 장점 = 자원 낭비 방지 <- 만들어서(x) pool에 만들어둔 것(o) 줌-->
+			<dataSource type="POOLED">
+				<property name="driver" value="oracle.jdbc.driver.OracleDriver" />
+				<property name="url" value="jdbc:oracle:thin:@localhost:1521:xe" />
+				<property name="username" value="MYBATIS" /> <!--내가 db에서 소문자로 썼어도(오늘 아침의 생성 계정 = mybatis) 대문자로 등록됨-->
+				<property name="password" value="mybatis" /> <!--비밀번호는 대/소문자 구별함-->
+			</dataSource>
+		</environment>
+	</environments>
+	
+	<!--mapper = 실행할 sql문들을 기록해둔 mapper 파일들을 등록하는 영역; 각 mapper.xml 파일 생성 + mapper 태그에 namespace 속성 부여한 뒤, 여기에 추가해야 함 vs otherwise 서버 오류남-->
+	<mappers>
+		<!--2022.2.9(수) 15h40 추가-->
+		<mapper resource="/mappers/member-mapper.xml" />
+		
+		<!--2022.2.10(목) 14h40 추가-->
+		<mapper resource="/mappers/board-mapper.xml" />
+	
+	</mappers>
+
+</configuration>

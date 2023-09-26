@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--2022.2.9(수) 15h40-->
+<mapper namespace="memberMapper">
+<!--doctype이 mapper 파일이기 때문에 전체가 mapper 태그 안에 있어야 함
+	namespace 속성 = 해당 mapper 파일의 고유한 별칭 -> 이 프로젝트 내에서 중복되면 안 됨-->
+	
+<!--다른 mapper.xml 파일에는 여기에 있는 것과 동일한 id 값 가지는 태그가 있을 수도 있음 -> id는 이 xml 파일에서의 고유한 식별자
+
+	DML문일 경우, 쿼리문의 실행 결과 = 처리된 행의 개수 = int형 자료 -> resultType 또는 resultMap 안 써도 됨
+	<insert id="각 sql문의 식별자" parameterType="전달받을 Java 타입(full 클래스명) 또는 별칭"(생략 가능)>
+		SQL문
+	</insert>
+	<update></update>
+	<delete></delete>
+	전달받을 값이 없는 경우, parameterType 속성은 생략 가능
+	
+	SELECT문일 경우, db로부터 조회 결과는 ResultSet으로 옴 -> 내가 작성한 sql문에 따라 반환형/조회 결과가 다를 수 있음 e.g. id 찾기 기능 -> String 반환, SELECT COUNT(*) -> int 반환, 로그인 기능 -> Member 객체 반환 등
+	<select id="각 sql문의 식별자" parameterType="전달받을 Java 타입(full 클래스명 또는 별칭)"(생략 가능)
+			resultType="조회 결과를 반환하고자 하는 Java 타입" 또는 resultMap="조회 결과를 뽑아서 mapping할 resultMap의 id">
+		SQL문
+	</select>
+	전달받을 값이 없는 경우, parameterType 속성은 생략 가능 + resultType(Java에서 제공하는 자료형) 또는 resultMap(내가 만든 vo 클래스 타입)으로 조회 결과 값에 대한 타입을 지정해야 함
+	
+	2022.2.10(목) 10h30
+	resultMap = MyBatis의 핵심 기능 중 하나 = SELECT문 실행해서 db 조회 결과로 온 ResultSet으로부터 조회된 컬럼 값을 하나씩 뽑아서 내가 지정한 vo 객체의 각 필드에 담을 수 있음
+	<resultMap id="식별자" type="조회된 결과를 담아서 반환하고자 하는 vo 객체의 타입(full 클래스명) 또는 별칭">
+		<result column="조회 결과를 뽑고자 하는 db 컬럼명" property="해당 결과를 담고자 하는 필드명" />
+		<result column="조회 결과를 뽑고자 하는 db 컬럼명" property="해당 결과를 담고자 하는 필드명" />
+		..
+	</resultMap>
+	
+	?(위치 홀더) 대신, 해당 sql문에 전달된 객체로부터 값을 꺼내서 #{필드명 또는 변수명 또는 map의 key 값} -> 16h25 나의 질문 = 'map의 key 값'이 무엇이지? >.<
+	e.g. 아래 쿼리문 #{userId} = m.getUserId()
+				#{userPwd} = m.getUserPwd()-->
+	
+	<insert id="insertMember" parameterType="member">
+		INSERT INTO MEMBER(USER_NO, USER_ID, USER_PWD, USER_NAME, EMAIL, BIRTHDAY, GENDER, PHONE, ADDRESS)
+		VALUES(SEQ_UNO.NEXTVAL, #{userId}, #{userPwd}, #{userName}, #{email}, #{birthday}, #{gender}, #{phone}, #{address})
+	</insert>
+	
+	<!--2022.2.10(목) 10h30-->
+	<resultMap id="memberResultSet" type="member">
+		<result column="USER_NO" property="userNo" />
+		<result column="USER_ID" property="userId" />
+		<result column="USER_PWD" property="userPwd" />
+		<result column="USER_NAME" property="userName" />
+		<result column="EMAIL" property="email" />
+		<result column="BIRTHDAY" property="birthday" />
+		<result column="GENDER" property="gender" />
+		<result column="PHONE" property="phone" />
+		<result column="ADDRESS" property="address" />
+		<result column="ENROLL_DATE" property="enrollDate" />
+		<result column="MODIFY_DATE" property="modifyDate" />
+		<result column="STATUS" property="status" />
+	</resultMap>
+	
+	<!--2022.2.10(목) 10h25-->
+	<select id="loginMember" parameterType="member" resultMap="memberResultSet">
+		SELECT USER_NO, USER_ID, USER_PWD, USER_NAME, EMAIL, BIRTHDAY, GENDER, PHONE, ADDRESS, ENROLL_DATE, MODIFY_DATE, STATUS
+		FROM MEMBER
+		WHERE STATUS = 'Y' AND USER_ID = #{userId} AND USER_PWD = #{userPwd}
+	</select>
+
+</mapper>
